@@ -1,0 +1,18 @@
+{
+  "name": "ts_refactor",
+  "version": "1.0.0",
+  "description": "refactor practice",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Tim",
+  "devDependencies": {
+    "@types/jest": "^25.2.1",
+    "jest": "^26.0.1",
+    "ts-jest": "^25.5.1",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@jest/globals": "^26.0.1"
+  }
+}
