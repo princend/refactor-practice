@@ -4,6 +4,13 @@ type hash<T> = { [key: string]: T };
 export type Plays = hash<Play>;
 type CbFn<T, P> = (value: T) => P;
 type DramaType = hash<CbFn<number, number>>;
+type ArrReduce = <T>(arr: T[]) => T;
+
+const currencyUSD = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2
+})
 
 const dramaDic: DramaType = {
     tragedy: (audience: number) => audience > 30 ? (40000 + 1000 * (audience - 30)) : 40000,
@@ -12,26 +19,21 @@ const dramaDic: DramaType = {
 
 const resultDic = {
     init: (customer: string) => `Statement for ${customer}\n`,
-    order: (name: string, thisAmount: number, audience: number) => ` ${name}: ${formatUSD(thisAmount)} (${audience} seats)\n`,
+    order: (arrReduce: ArrReduce, invoice: Invoice, plays: hash<Play>) => arrReduce<string>(invoice.performances.map(perf => getInvoiceInfo(plays, perf))),
     end: (totalAmount: number, volumeCredits: number) => `Amount owed is ${formatUSD(totalAmount)}\nYou earned ${volumeCredits} credits!\n`
 }
 
 export default function statement(invoice: Invoice, plays: Plays): string {
-    let volumeCredits = invoice.performances.map(perf => getVolumnCredits(perf.audience, plays[perf.playID].type)).reduce((a, b) => a + b);
-    let totalAmount = invoice.performances.map(perf => calcAmount(plays[perf.playID].type, perf.audience)).reduce((a, b) => a + b);
-    let result = resultDic['init'](invoice.customer) + invoice.performances.map(perf => getInvoiceInfo(plays, perf)).reduce((a, b) => a + b) + resultDic['end'](totalAmount, volumeCredits);
+    const reducer = (a: any, b: any) => a + b;
+    const arrReduce = <T>(arr: Array<T>) => arr.reduce(reducer)
+    let volumeCredits = arrReduce<number>(invoice.performances.map(perf => getVolumnCredits(perf.audience, plays[perf.playID].type)));
+    let totalAmount = arrReduce<number>(invoice.performances.map(perf => calcAmount(perf.audience, plays[perf.playID].type)));
+    let result = resultDic['init'](invoice.customer) + resultDic['order'](arrReduce, invoice, plays) + resultDic['end'](totalAmount, volumeCredits);
     return result;
 }
 
-const currencyUSD = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2
-})
-
-
 function getInvoiceInfo(plays: hash<Play>, perf: Performance) {
-    return resultDic['order'](plays[perf.playID].name, calcAmount(plays[perf.playID].type, perf.audience), perf.audience);
+    return ` ${plays[perf.playID].name}: ${formatUSD(calcAmount(perf.audience, plays[perf.playID].type))} (${perf.audience} seats)\n`;
 }
 
 function getVolumnCredits(audience: number, type: string): number {
@@ -42,7 +44,7 @@ function formatUSD(value: number): string {
     return currencyUSD.format(value / 100);
 }
 
-function calcAmount(type: string, audience: number): number {
+function calcAmount(audience: number, type: string): number {
     if (dramaDic[type]) {
         return dramaDic[type](audience);
     }
