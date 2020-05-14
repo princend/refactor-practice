@@ -17,10 +17,9 @@ const resultDic = {
 }
 
 export default function statement(invoice: Invoice, plays: Plays): string {
-    let result = getEntireInvoiceInfo(invoice, plays);
     let volumeCredits = invoice.performances.map(perf => getVolumnCredits(perf.audience, plays[perf.playID].type)).reduce((a, b) => a + b);
     let totalAmount = invoice.performances.map(perf => calcAmount(plays[perf.playID].type, perf.audience)).reduce((a, b) => a + b);
-    result += resultDic['end'](totalAmount, volumeCredits);
+    let result = resultDic['init'](invoice.customer) + invoice.performances.map(perf => getInvoiceInfo(plays, perf)).reduce((a, b) => a + b) + resultDic['end'](totalAmount, volumeCredits);
     return result;
 }
 
@@ -30,19 +29,9 @@ const currencyUSD = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2
 })
 
-function getEntireInvoiceInfo(invoice: Invoice, plays: hash<Play>) {
-    let result = resultDic['init'](invoice.customer);
-    for (let perf of invoice.performances) {
-        result += getInvoiceInfo(plays, perf, result);
-    }
-    return result;
-}
 
-function getInvoiceInfo(plays: hash<Play>, perf: Performance, result: string) {
-    const play = plays[perf.playID];
-    let thisAmount = calcAmount(play.type, perf.audience);
-    result = resultDic['order'](play.name, thisAmount, perf.audience);
-    return result;
+function getInvoiceInfo(plays: hash<Play>, perf: Performance) {
+    return resultDic['order'](plays[perf.playID].name, calcAmount(plays[perf.playID].type, perf.audience), perf.audience);
 }
 
 function getVolumnCredits(audience: number, type: string): number {
