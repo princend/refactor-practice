@@ -6,7 +6,7 @@ type Plays = { [key: string]: Play };
 export default function statement(invoice: Invoice, plays: Plays): string {
     let totalAmount = 0;
     let volumeCredits = 0;
-    let result = `Statement for ${invoice.customer}\n`;
+    let result = resultDic['init'](invoice.customer);
 
     for (let perf of invoice.performances) {
         const play = plays[perf.playID];
@@ -36,12 +36,11 @@ export default function statement(invoice: Invoice, plays: Plays): string {
         if ("comedy" === play.type) volumeCredits += Math.floor(perf.audience / 5);
 
         //print line for this order
-        result += ` ${play.name}: ${formatUSD(thisAmount)} (${perf.audience} seats)\n`;
+        result += resultDic['order'](play.name, thisAmount, perf.audience);
         totalAmount += thisAmount;
     }
 
-    result = getResult(result, totalAmount, volumeCredits);
-
+    result += resultDic['end'](totalAmount, volumeCredits);
     return result;
 }
 
@@ -52,12 +51,12 @@ const currencyUSD = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2
 })
 
-function getResult(result: string, totalAmount: number, volumeCredits: number) {
-    result += `Amount owed is ${formatUSD(totalAmount)}\nYou earned ${volumeCredits} credits!\n`;
-    return result;
-}
-
 function formatUSD(value: number): string {
     return currencyUSD.format(value / 100);
 }
 
+const resultDic = {
+    init: (customer: string) => `Statement for ${customer}\n`,
+    order: (name: string, thisAmount: number, audience: number) => ` ${name}: ${formatUSD(thisAmount)} (${audience} seats)\n`,
+    end: (totalAmount: number, volumeCredits: number) => `Amount owed is ${formatUSD(totalAmount)}\nYou earned ${volumeCredits} credits!\n`
+}
