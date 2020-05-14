@@ -7,6 +7,7 @@ type DramaType = hash<CbFn<number, number>>;
 
 const currencyUSDsetting = { style: "currency", currency: "USD", minimumFractionDigits: 2 }
 const currencyUSD = new Intl.NumberFormat("en-US", currencyUSDsetting)
+const formatUSD = (value: number) => currencyUSD.format(value / 100);
 
 const dramaDic: DramaType = {
     tragedy: (audience: number) => 40000 + (audience > 30 ? (1000 * (audience - 30)) : 0),
@@ -21,20 +22,8 @@ const resultDic = {
 
 const arrReduce = <T>(arr: Array<T>) => arr.reduce((a: any, b: any) => a + b);
 const getVolumnCredits = (audience: number, type: string) => Math.max(audience - 30, 0) + ("comedy" === type ? Math.floor(audience / 5) : 0)
-const formatUSD = (value: number) => currencyUSD.format(value / 100);
-
-function getInvoiceInfo(plays: hash<Play>, perf: Performance) {
-    return ` ${plays[perf.playID].name}: ${formatUSD(calcAmount(perf.audience, plays[perf.playID].type))} (${perf.audience} seats)\n`;
-}
-
-function calcAmount(audience: number, type: string): number {
-    if (dramaDic[type]) {
-        return dramaDic[type](audience);
-    }
-    else {
-        throw new Error(`unknown type: ${type}`);
-    }
-}
+const getInvoiceInfo = (plays: hash<Play>, perf: Performance) => ` ${plays[perf.playID].name}: ${formatUSD(calcAmount(perf.audience, plays[perf.playID].type))} (${perf.audience} seats)\n`;
+const calcAmount = (audience: number, type: string) => { if (dramaDic[type]) return dramaDic[type](audience); throw new Error(`unknown type: ${type}`) }
 
 export default function statement(invoice: Invoice, plays: Plays): string {
     const volumnCreditsArr: number[] = invoice.performances.map(perf => getVolumnCredits(perf.audience, plays[perf.playID].type));
