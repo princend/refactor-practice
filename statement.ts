@@ -4,44 +4,27 @@ type hash<T> = { [key: string]: T };
 export type Plays = hash<Play>;
 type CbFn<T, P> = (value: T) => P;
 type DramaType = hash<CbFn<number, number>>;
-type ArrReduce = <T>(arr: T[]) => T;
 
-const currencyUSD = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2
-})
+const currencyUSDsetting = { style: "currency", currency: "USD", minimumFractionDigits: 2 }
+const currencyUSD = new Intl.NumberFormat("en-US", currencyUSDsetting)
 
 const dramaDic: DramaType = {
-    tragedy: (audience: number) => audience > 30 ? (40000 + 1000 * (audience - 30)) : 40000,
-    comedy: (audience: number) => audience > 20 ? 40000 + 500 * (audience - 20) + 300 * audience : 30000 + 300 * audience
+    tragedy: (audience: number) => 40000 + (audience > 30 ? (1000 * (audience - 30)) : 0),
+    comedy: (audience: number) => 40000 + 300 * audience + (audience > 20 ? 500 * (audience - 20) : -10000)
 }
 
 const resultDic = {
     init: (customer: string) => `Statement for ${customer}\n`,
-    order: (arrReduce: ArrReduce, invoice: Invoice, plays: hash<Play>) => arrReduce<string>(invoice.performances.map(perf => getInvoiceInfo(plays, perf))),
+    order: (arr: Performance[], plays: hash<Play>) => arrReduce<string>(arr.map(perf => getInvoiceInfo(plays, perf))),
     end: (totalAmount: number, volumeCredits: number) => `Amount owed is ${formatUSD(totalAmount)}\nYou earned ${volumeCredits} credits!\n`
 }
 
-export default function statement(invoice: Invoice, plays: Plays): string {
-    const reducer = (a: any, b: any) => a + b;
-    const arrReduce = <T>(arr: Array<T>) => arr.reduce(reducer)
-    let volumeCredits = arrReduce<number>(invoice.performances.map(perf => getVolumnCredits(perf.audience, plays[perf.playID].type)));
-    let totalAmount = arrReduce<number>(invoice.performances.map(perf => calcAmount(perf.audience, plays[perf.playID].type)));
-    let result = resultDic['init'](invoice.customer) + resultDic['order'](arrReduce, invoice, plays) + resultDic['end'](totalAmount, volumeCredits);
-    return result;
-}
+const arrReduce = <T>(arr: Array<T>) => arr.reduce((a: any, b: any) => a + b);
+const getVolumnCredits = (audience: number, type: string) => Math.max(audience - 30, 0) + ("comedy" === type ? Math.floor(audience / 5) : 0)
+const formatUSD = (value: number) => currencyUSD.format(value / 100);
 
 function getInvoiceInfo(plays: hash<Play>, perf: Performance) {
     return ` ${plays[perf.playID].name}: ${formatUSD(calcAmount(perf.audience, plays[perf.playID].type))} (${perf.audience} seats)\n`;
-}
-
-function getVolumnCredits(audience: number, type: string): number {
-    return "comedy" === type ? Math.floor(audience / 5) + Math.max(audience - 30, 0) : Math.max(audience - 30, 0);;
-}
-
-function formatUSD(value: number): string {
-    return currencyUSD.format(value / 100);
 }
 
 function calcAmount(audience: number, type: string): number {
@@ -53,6 +36,8 @@ function calcAmount(audience: number, type: string): number {
     }
 }
 
-
-
-
+export default function statement(invoice: Invoice, plays: Plays): string {
+    const volumnCreditsArr: number[] = invoice.performances.map(perf => getVolumnCredits(perf.audience, plays[perf.playID].type));
+    const AmountArr: number[] = invoice.performances.map(perf => calcAmount(perf.audience, plays[perf.playID].type))
+    return resultDic['init'](invoice.customer) + resultDic['order'](invoice.performances, plays) + resultDic['end'](arrReduce<number>(AmountArr), arrReduce<number>(volumnCreditsArr));
+}
