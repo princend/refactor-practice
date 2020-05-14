@@ -40,8 +40,7 @@ export default function statement(invoice: Invoice, plays: Plays): string {
         totalAmount += thisAmount;
     }
 
-    result += `Amount owed is ${formatUSD(totalAmount)}\n`;
-    result += `You earned ${volumeCredits} credits!\n`;
+    result = getResult(result, totalAmount, volumeCredits);
 
     return result;
 }
@@ -52,6 +51,11 @@ const currencyUSD = new Intl.NumberFormat("en-US", {
     currency: "USD",
     minimumFractionDigits: 2
 })
+
+function getResult(result: string, totalAmount: number, volumeCredits: number) {
+    result += `Amount owed is ${formatUSD(totalAmount)}\nYou earned ${volumeCredits} credits!\n`;
+    return result;
+}
 
 function formatUSD(value: number): string {
     return currencyUSD.format(value / 100);
