@@ -1,14 +1,12 @@
-import {Invoice, Play, Performance} from "./models";
+import { Invoice, Play, Performance } from "./models";
 
-export default function statement(invoice: Invoice, plays: { [key: string]: Play }): string {
+
+type Plays = { [key: string]: Play };
+
+export default function statement(invoice: Invoice, plays: Plays): string {
     let totalAmount = 0;
     let volumeCredits = 0;
     let result = `Statement for ${invoice.customer}\n`;
-    const format = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 2
-    }).format;
 
     for (let perf of invoice.performances) {
         const play = plays[perf.playID];
@@ -38,14 +36,24 @@ export default function statement(invoice: Invoice, plays: { [key: string]: Play
         if ("comedy" === play.type) volumeCredits += Math.floor(perf.audience / 5);
 
         //print line for this order
-        result += ` ${play.name}: ${format(thisAmount / 100)} (${perf.audience} seats)\n`;
+        result += ` ${play.name}: ${formatUSD(thisAmount)} (${perf.audience} seats)\n`;
         totalAmount += thisAmount;
     }
 
-    result += `Amount owed is ${format(totalAmount / 100)}\n`;
+    result += `Amount owed is ${formatUSD(totalAmount)}\n`;
     result += `You earned ${volumeCredits} credits!\n`;
 
     return result;
 }
 
+
+const currencyUSD = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2
+})
+
+function formatUSD(value: number): string {
+    return currencyUSD.format(value / 100);
+}
 
