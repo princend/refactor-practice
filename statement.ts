@@ -1,9 +1,7 @@
 import { Invoice, Play, Performance } from "./models";
 
-
-
 type hash<T> = { [key: string]: T };
-type Plays = hash<Play>;
+export type Plays = hash<Play>;
 type CbFn<T, P> = (value: T) => P;
 type DramaType = hash<CbFn<number, number>>;
 
@@ -18,24 +16,13 @@ const resultDic = {
     end: (totalAmount: number, volumeCredits: number) => `Amount owed is ${formatUSD(totalAmount)}\nYou earned ${volumeCredits} credits!\n`
 }
 
-
 export default function statement(invoice: Invoice, plays: Plays): string {
-    let totalAmount = 0;
-    let volumeCredits = 0;
-    let result = resultDic['init'](invoice.customer);
+    let { totalAmount, result } = forrr(invoice, plays);
 
-    for (let perf of invoice.performances) {
-        const play = plays[perf.playID];
-        let thisAmount = calcAmount(play.type, perf.audience);
-        volumeCredits += getVolumnCredits(perf.audience, play.type);
-        result += resultDic['order'](play.name, thisAmount, perf.audience);
-        totalAmount += thisAmount;
-    }
-
+    let volumeCredits = invoice.performances.map(perf => getVolumnCredits(perf.audience, plays[perf.playID].type)).reduce((a, b) => a + b);
     result += resultDic['end'](totalAmount, volumeCredits);
     return result;
 }
-
 
 const currencyUSD = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -43,7 +30,24 @@ const currencyUSD = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2
 })
 
-function getVolumnCredits(audience: number, type: string) {
+function forrr(invoice: Invoice, plays: hash<Play>) {
+    let totalAmount = 0;
+    let result = resultDic['init'](invoice.customer);
+    for (let perf of invoice.performances) {
+        ({ totalAmount, result } = getInvoiceInfo(plays, perf, totalAmount, result));
+    }
+    return { totalAmount, result };
+}
+
+function getInvoiceInfo(plays: hash<Play>, perf: Performance, totalAmount: number, result: string) {
+    const play = plays[perf.playID];
+    let thisAmount = calcAmount(play.type, perf.audience);
+    totalAmount += thisAmount;
+    result += resultDic['order'](play.name, thisAmount, perf.audience);
+    return { totalAmount, result };
+}
+
+function getVolumnCredits(audience: number, type: string): number {
     return "comedy" === type ? Math.floor(audience / 5) + Math.max(audience - 30, 0) : Math.max(audience - 30, 0);;
 }
 
