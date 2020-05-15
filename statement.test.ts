@@ -1,21 +1,21 @@
 import statement from "./statement";
-import { Invoice, Plays } from "./models";
+import {Play, Invoice} from "./models";
 
 test('Test in js file', () => {
     const invoice: Invoice =
-    {
-        customer: "BigCo",
-        performances: [
-            { playID: "hamlet", audience: 55 },
-            { playID: "as-like", audience: 35 },
-            { playID: "othello", audience: 40 }
-        ]
-    };
+        {
+            customer: "BigCo",
+            performances: [
+                {playID: "hamlet", audience: 55},
+                {playID: "as-like", audience: 35},
+                {playID: "othello", audience: 40}
+            ]
+        };
 
-    const plays: Plays = {
-        "hamlet": { name: "Hamlet", type: "tragedy" },
-        "as-like": { name: "As You Like It", type: "comedy" },
-        "othello": { name: "Othello", type: "tragedy" }
+    const plays: { [key: string]: Play } = {
+        "hamlet": {name: "Hamlet", type: "tragedy"},
+        "as-like": {name: "As You Like It", type: "comedy"},
+        "othello": {name: "Othello", type: "tragedy"}
     };
 
     expect(statement(invoice, plays))

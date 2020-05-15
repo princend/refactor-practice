@@ -12,8 +12,3 @@ export interface Invoice {
     customer: string;
     performances: Performance[];
 }
-
-export type hash<T> = { [key: string]: T };
-export type Plays = hash<Play>;
-export type CbFn<T, P> = (value: T) => P;
-export type DramaType = hash<CbFn<number, number>>;

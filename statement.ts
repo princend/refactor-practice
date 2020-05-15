@@ -1,29 +1,51 @@
-import { Invoice, Play, Performance, DramaType, hash, Plays } from "./models";
+import {Invoice, Play, Performance} from "./models";
 
-const currencyUSDsetting = { style: "currency", currency: "USD", minimumFractionDigits: 2 }
-const currencyUSD = new Intl.NumberFormat("en-US", currencyUSDsetting)
-const formatUSD = (value: number) => currencyUSD.format(value / 100);
+export default function statement(invoice: Invoice, plays: { [key: string]: Play }): string {
+    let totalAmount = 0;
+    let volumeCredits = 0;
+    let result = `Statement for ${invoice.customer}\n`;
+    const format = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2
+    }).format;
 
-const dramaDic: DramaType = {
-    tragedy: (audience: number) => 40000 + (audience > 30 ? (1000 * (audience - 30)) : 0),
-    comedy: (audience: number) => 40000 + 300 * audience + (audience > 20 ? 500 * (audience - 20) : -10000)
+    for (let perf of invoice.performances) {
+        const play = plays[perf.playID];
+        let thisAmount = 0;
+
+        switch (play.type) {
+            case "tragedy":
+                thisAmount = 40000;
+                if (perf.audience > 30) {
+                    thisAmount += 1000 * (perf.audience - 30);
+                }
+                break;
+            case "comedy":
+                thisAmount = 30000;
+                if (perf.audience > 20) {
+                    thisAmount += 10000 + 500 * (perf.audience - 20);
+                }
+                thisAmount += 300 * perf.audience;
+                break;
+            default:
+                throw new Error(`unknown type: ${play.type}`);
+        }
+
+        //add volume credits
+        volumeCredits += Math.max(perf.audience - 30, 0);
+        //add extra credit for every ten comedy attendees
+        if ("comedy" === play.type) volumeCredits += Math.floor(perf.audience / 5);
+
+        //print line for this order
+        result += ` ${play.name}: ${format(thisAmount / 100)} (${perf.audience} seats)\n`;
+        totalAmount += thisAmount;
+    }
+
+    result += `Amount owed is ${format(totalAmount / 100)}\n`;
+    result += `You earned ${volumeCredits} credits!\n`;
+
+    return result;
 }
 
-const resultDic = {
-    init: (customer: string) => `Statement for ${customer}\n`,
-    order: (arr: Performance[], plays: hash<Play>) => arrReduce<string>(arr.map(perf => getInvoiceInfo(perf.audience, getPerformanceType(plays, perf), getPerformanceName(plays, perf)))),
-    end: (totalAmount: number, volumeCredits: number) => `Amount owed is ${formatUSD(totalAmount)}\nYou earned ${volumeCredits} credits!\n`
-}
 
-const getPerformanceType = (plays: Plays, perf: Performance) => plays[perf.playID].type;
-const getPerformanceName = (plays: Plays, perf: Performance) => plays[perf.playID].name;
-const arrReduce = <T>(arr: Array<T>) => arr.reduce((a: any, b: any) => a + b);
-const getVolumeCredits = (audience: number, type: string) => Math.max(audience - 30, 0) + ("comedy" === type ? Math.floor(audience / 5) : 0)
-const getInvoiceInfo = (audience: number, type: string, name: string) => ` ${name}: ${formatUSD(calcAmount(audience, type))} (${audience} seats)\n`;
-const calcAmount = (audience: number, type: string) => { if (dramaDic[type]) return dramaDic[type](audience); throw new Error(`unknown type: ${type}`) }
-
-export default function statement(invoice: Invoice, plays: Plays): string {
-    const volumeCredits = arrReduce<number>(invoice.performances.map(perf => getVolumeCredits(perf.audience, getPerformanceType(plays, perf))))
-    const totalAmount = arrReduce<number>(invoice.performances.map(perf => calcAmount(perf.audience, getPerformanceType(plays, perf))))
-    return `${resultDic['init'](invoice.customer)}${resultDic['order'](invoice.performances, plays)}${resultDic['end'](totalAmount, volumeCredits)}`;
-}
