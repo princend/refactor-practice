@@ -1,48 +1,30 @@
-import { Invoice, Performance, Plays, currencySetting, format } from "./models";
+import { Tragedy, Invoice, Performance, Plays, format, Statement, Comedy, ADrama, Dramas } from "./models";
 
 
+const drama: Dramas = { tragedy: new Tragedy(), comedy: new Comedy() }
 
 export default function statement(invoice: Invoice, plays: Plays): string {
-    let totalAmount = 0;
-    let volumeCredits = 0;
-    let result = `Statement for ${invoice.customer}\n`;
+    let statement: Statement = new Statement();
+    statement.getInitResult(invoice.customer);
 
     for (let perf of invoice.performances) {
         const play = plays[perf.playID];
-        let thisAmount = 0;
-
-        switch (play.type) {
-            case "tragedy":
-                thisAmount = 40000;
-                if (perf.audience > 30) {
-                    thisAmount += 1000 * (perf.audience - 30);
-                }
-                break;
-            case "comedy":
-                thisAmount = 30000;
-                if (perf.audience > 20) {
-                    thisAmount += 10000 + 500 * (perf.audience - 20);
-                }
-                thisAmount += 300 * perf.audience;
-                break;
-            default:
-                throw new Error(`unknown type: ${play.type}`);
-        }
-
-        //add volume credits
-        volumeCredits += Math.max(perf.audience - 30, 0);
-        //add extra credit for every ten comedy attendees
-        if ("comedy" === play.type) volumeCredits += Math.floor(perf.audience / 5);
-
-        //print line for this order
-        result += ` ${play.name}: ${format(thisAmount / 100)} (${perf.audience} seats)\n`;
-        totalAmount += thisAmount;
+        let thisAmount = calcAmount(play.type, perf.audience);;
+        statement.volumeCredits += drama[play.type].calcVolumeCredit(perf.audience);
+        statement.totalAmount += thisAmount;
+        statement.result += ` ${play.name}: ${format(thisAmount / 100)} (${perf.audience} seats)\n`;
     }
 
-    result += `Amount owed is ${format(totalAmount / 100)}\n`;
-    result += `You earned ${volumeCredits} credits!\n`;
-
-    return result;
+    statement.getEndResult();
+    return statement.result;
 }
 
+function calcAmount(type: string, audience: number) {
+    if (drama[type]) {
+        return drama[type].calcAmount(audience);
+    }
+    else {
+        throw new Error(`unknown type: ${type}`);
+    }
+}
 
