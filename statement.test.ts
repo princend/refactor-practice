@@ -1,5 +1,5 @@
-import statement, { Plays } from "./statement";
-import { Invoice } from "./models";
+import statement from "./statement";
+import { Invoice, Plays } from "./models";
 
 test('Test in js file', () => {
     const invoice: Invoice =
