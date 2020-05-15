@@ -33,21 +33,36 @@ export abstract class AStateMent {
     result = '';
 
     getInitResult(...arg: any[]) { }
+    getPerformanceResult(...arg: any[]) { }
     getEndResult(...arg: any[]) { }
 }
 
 export class Statement extends AStateMent {
 
-    getInitResult(customer: string) { this.result = `Statement for ${customer}\n` };
+    getInitResult(customer: string) {
+        this.result = `Statement for ${customer}\n`
+    };
+
+    getPerformanceResult(name: string, amountDescription: string, audience: number) {
+        this.result += ` ${name}: ${amountDescription} (${audience} seats)\n`;
+    }
     getEndResult() {
         this.result += `Amount owed is ${format(this.totalAmount / 100)}\n`;
         this.result += `You earned ${this.volumeCredits} credits!\n`;
     };
+
+    accumulateVolumeCredits(volumeCredit: number) {
+        this.volumeCredits += volumeCredit;
+    }
+
+    accumulateTotalAmount(amount: number) {
+        this.totalAmount += amount;
+    }
 }
 
 export abstract class ADrama {
     calcAmount(audience: number, ...arg: any[]): any { }
-    calcVolumeCredit(audience: number, ...arg: any[]): number { return Math.max(audience - 30, 0); }
+    calcVolumeCredit(audience: number): number { return Math.max(audience - 30, 0); }
 }
 
 export class Tragedy extends ADrama {
