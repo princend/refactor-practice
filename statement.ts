@@ -18,12 +18,12 @@ const resultDic = {
 const getPerformanceType = (plays: Plays, perf: Performance) => plays[perf.playID].type;
 const getPerformanceName = (plays: Plays, perf: Performance) => plays[perf.playID].name;
 const arrReduce = <T>(arr: Array<T>) => arr.reduce((a: any, b: any) => a + b);
-const getVolumnCredits = (audience: number, type: string) => Math.max(audience - 30, 0) + ("comedy" === type ? Math.floor(audience / 5) : 0)
+const getVolumeCredits = (audience: number, type: string) => Math.max(audience - 30, 0) + ("comedy" === type ? Math.floor(audience / 5) : 0)
 const getInvoiceInfo = (audience: number, type: string, name: string) => ` ${name}: ${formatUSD(calcAmount(audience, type))} (${audience} seats)\n`;
 const calcAmount = (audience: number, type: string) => { if (dramaDic[type]) return dramaDic[type](audience); throw new Error(`unknown type: ${type}`) }
 
 export default function statement(invoice: Invoice, plays: Plays): string {
-    const volumnCreditsArr: number[] = invoice.performances.map(perf => getVolumnCredits(perf.audience, getPerformanceType(plays, perf)));
-    const AmountArr: number[] = invoice.performances.map(perf => calcAmount(perf.audience, getPerformanceType(plays, perf)))
-    return resultDic['init'](invoice.customer) + resultDic['order'](invoice.performances, plays) + resultDic['end'](arrReduce<number>(AmountArr), arrReduce<number>(volumnCreditsArr));
+    const volumeCredits = arrReduce<number>(invoice.performances.map(perf => getVolumeCredits(perf.audience, getPerformanceType(plays, perf))))
+    const totalAmount = arrReduce<number>(invoice.performances.map(perf => calcAmount(perf.audience, getPerformanceType(plays, perf))))
+    return `${resultDic['init'](invoice.customer)}${resultDic['order'](invoice.performances, plays)}${resultDic['end'](totalAmount, volumeCredits)}`;
 }
