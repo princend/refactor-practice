@@ -66,6 +66,7 @@ export abstract class ADrama {
 }
 
 export class Tragedy extends ADrama {
+
     calcAmount(audience: number) {
         return 40000 + (audience > 30 ? 1000 * (audience - 30) : 0)
     }
@@ -81,3 +82,6 @@ export class Comedy extends ADrama {
         return Math.max(audience - 30, 0) + Math.floor(audience / 5)
     }
 }
+
+
+export const drama: Dramas = { tragedy: new Tragedy(), comedy: new Comedy() }
