@@ -1,14 +1,11 @@
-import {Invoice, Play, Performance} from "./models";
+import { Invoice, Performance, Plays, currencySetting, format } from "./models";
 
-export default function statement(invoice: Invoice, plays: { [key: string]: Play }): string {
+
+
+export default function statement(invoice: Invoice, plays: Plays): string {
     let totalAmount = 0;
     let volumeCredits = 0;
     let result = `Statement for ${invoice.customer}\n`;
-    const format = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 2
-    }).format;
 
     for (let perf of invoice.performances) {
         const play = plays[perf.playID];

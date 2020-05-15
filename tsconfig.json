@@ -69,7 +69,7 @@
     /* Disallow inconsistently-cased references to the same file. */
   },
   "files": [
-    "./statement.ts"
+    "./statement.ts", "./Plays.ts"
   ],
   "exclude": [
     "node_modules"
